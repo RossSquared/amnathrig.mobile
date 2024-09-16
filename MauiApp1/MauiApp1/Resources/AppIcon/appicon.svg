@@ -1,4 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="0" width="456" height="456" fill="#512BD4" />
+<svg
+   width="456"
+   height="456"
+   viewBox="0 0 456 456"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <rect
+     x="0"
+     y="0"
+     width="456"
+     height="456"
+     fill="#512bd4"
+     id="rect1" />
+  <path
+     style="fill:#000000;stroke:#ffffff;stroke-width:0.586873;stroke-opacity:1"
+     d="M 0.29343629,228 V 0.29343629 H 228 455.70656 V 228 455.70656 H 228 0.29343629 Z"
+     id="path1" />
+  <path
+     style="fill:#000000;stroke:#ffffff;stroke-width:0.586873;stroke-opacity:1"
+     d="M 0.88030888,228 V 0.88030888 H 228 455.11969 V 228 455.11969 H 228 0.88030888 Z"
+     id="path2" />
+  <path
+     style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:0.586873;stroke-opacity:1"
+     d="M 1.4671815,228 V 1.4671815 H 228 454.53282 V 228 454.53282 H 228 1.4671815 Z"
+     id="path3" />
 </svg>
