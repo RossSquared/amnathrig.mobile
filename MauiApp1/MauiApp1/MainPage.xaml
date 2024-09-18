@@ -1,33 +1,64 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MauiApp1.MainPage">
+             x:Class="MauiApp1.MainPage"
+             Title="Assets">
 
-    <ContentPage.Content>
-        <!-- Layout for the page -->
-        <VerticalStackLayout Padding="10">
+    <!-- Wrapping the content inside a ScrollView -->
+    <ScrollView>
+        <StackLayout Padding="10">
 
-            <!-- Add the Logout Button at the top -->
-            <Button Text="Logout" 
-                    HorizontalOptions="End"
-                    Clicked="OnLogoutClicked"
-                    BackgroundColor="Red" 
-                    TextColor="White"/>
-            
-            <Button Text="Create New Asset" Clicked="OnCreateAssetClicked"/>
+            <!-- Create Asset Button at the Top -->
+            <Button Text="Create New Asset"
+                    Command="{Binding CreateAssetCommand}"
+                    HorizontalOptions="Center"
+                    Margin="0,10,0,20"
+                    BackgroundColor="#4CAF50"
+                    TextColor="White" />
 
+            <Label Text="Your Assets" FontSize="Large" HorizontalOptions="Center" />
 
-            <!-- ScrollView for asset details -->
-            <ScrollView>
-                <StackLayout x:Name="AssetsStackLayout" Padding="10">
-                    <Label Text="Assets will be displayed here." 
-                           x:Name="MessageLabel"
-                           VerticalOptions="Center" 
-                           HorizontalOptions="Center" 
-                           FontSize="Medium" 
-                           TextColor="Black"/>
-                </StackLayout>
-            </ScrollView>
-        </VerticalStackLayout>
-    </ContentPage.Content>
+            <!-- List of Assets -->
+            <CollectionView ItemsSource="{Binding Assets}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <StackLayout Padding="10" Spacing="10">
+
+                            <!-- Asset Name and Edit Button -->
+                            <StackLayout Orientation="Horizontal" Spacing="10">
+                                <Label Text="{Binding Name}" FontSize="Medium" VerticalOptions="Center" />
+                                <Button Text="Edit"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.EditAssetCommand}"
+                                        CommandParameter="{Binding Id}"
+                                        HorizontalOptions="EndAndExpand" />
+
+                                <Button Text="Delete" TextColor="Red" Clicked="OnDeleteClicked" CommandParameter="{Binding Id}" />
+                            </StackLayout>
+
+                            <!-- Asset Type -->
+                            <Label Text="{Binding AssetType}" FontSize="Small" TextColor="Gray" />
+
+                            <!-- Asset Description -->
+                            <Label Text="{Binding Description}" FontSize="Small" TextColor="Gray" />
+
+                            <!-- List of Properties -->
+                            <StackLayout Padding="10" BackgroundColor="#f9f9f9" Spacing="5">
+                                <Label Text="Properties" FontSize="Small" FontAttributes="Bold" />
+                                <CollectionView ItemsSource="{Binding Properties}">
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackLayout Orientation="Horizontal" Spacing="10">
+                                                <Label Text="{Binding Name}" FontSize="Small" FontAttributes="Bold" />
+                                                <Label Text="{Binding Value}" FontSize="Small" />
+                                            </StackLayout>
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                </CollectionView>
+                            </StackLayout>
+                        </StackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </StackLayout>
+    </ScrollView>
 </ContentPage>

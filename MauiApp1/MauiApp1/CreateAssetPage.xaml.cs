@@ -1,89 +1,159 @@
+using IdentityModel.Client;
 using IdentityModel.OidcClient;
-using Microsoft.Maui.Storage; // For Preferences
-using System.Net.Http.Headers;
+using System.Collections.ObjectModel;
+using System.Net.Http.Json;
 using System.Text.Json;
+using MauiApp1.Models;
 
-namespace MauiApp1;
-
-public partial class CreateAssetPage : ContentPage
+namespace MauiApp1
 {
-    private readonly string _apiBaseUrl = "https://dev.amnathrig.app";
-    private List<PropertyEntry> _properties = new List<PropertyEntry>(); // To hold the properties dynamically added
-
-    public CreateAssetPage()
+    public partial class CreateAssetPage : ContentPage
     {
-        InitializeComponent();
-   
-    }
+        private string _currentAccessToken;
+        private int? _assetId; // Used to determine if we're editing an existing asset
+        private string _customAssetType;
+        private Asset _asset;
+        public ObservableCollection<AssetProperty> Properties { get; set; } = new ObservableCollection<AssetProperty>();
 
-    // Handle adding a new property input set
-    private void OnAddPropertyClicked(object sender, EventArgs e)
-    {
-        var propertyEntry = new PropertyEntry(); // A helper class to hold property data
-        _properties.Add(propertyEntry);
-
-        var nameEntry = new Entry { Placeholder = "Property Name" };
-        var valueEntry = new Entry { Placeholder = "Property Value" };
-
-        propertyEntry.NameEntry = nameEntry;
-        propertyEntry.ValueEntry = valueEntry;
-
-        PropertiesStackLayout.Children.Add(nameEntry);
-        PropertiesStackLayout.Children.Add(valueEntry);
-    }
-
-    private async void OnCreateAssetClicked(object sender, EventArgs e)
-    {
-        string token = Preferences.Get("accessToken", string.Empty); // Retrieve token from Preferences
-
-        if (string.IsNullOrEmpty(token))
+        public List<string> PredefinedTypes { get; set; } = new List<string>
         {
-            StatusLabel.Text = "You are not authenticated.";
-            return;
-        }
-
-        // Create the properties list
-        var propertiesList = _properties
-            .Where(p => !string.IsNullOrWhiteSpace(p.NameEntry.Text) && !string.IsNullOrWhiteSpace(p.ValueEntry.Text))
-            .Select(p => new { Name = p.NameEntry.Text, Value = p.ValueEntry.Text })
-            .ToList();
-
-        var newAsset = new
-        {
-            Name = AssetNameEntry.Text,
-            Description = AssetDescriptionEditor.Text,
-            AssetType = !string.IsNullOrEmpty(CustomAssetTypeEntry.Text)
-                ? CustomAssetTypeEntry.Text
-                : AssetTypePicker.SelectedItem?.ToString(),
-            Properties = propertiesList // Attach the properties
+            "Vehicle",
+            "Appliance",
+            "Real Estate Property",
+            "Furniture",
+            "Electronics"
         };
 
-
-
-        using (var client = new HttpClient())
+        public CreateAssetPage(int? assetId = null)
         {
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            InitializeComponent();
+           
+            _assetId = assetId;
+            _asset = new Asset();
 
-            var content = new StringContent(JsonSerializer.Serialize(newAsset), System.Text.Encoding.UTF8, "application/json");
+            BindingContext = this;
 
-            var response = await client.PostAsync($"{_apiBaseUrl}/assets", content);
-            if (response.IsSuccessStatusCode)
+            // Set the title and button text based on whether we're editing or creating
+            if (_assetId.HasValue)
             {
-                await DisplayAlert("Success", "Asset created successfully.", "OK");
-                await Navigation.PopAsync(); // Go back to the previous page after successful creation
+                Title = "Edit Asset";
+                CreateButton.Text = "Update Asset";
+                LoadAssetDetails(_assetId.Value); // Load existing asset details if we're editing
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                StatusLabel.Text = $"Error: {errorContent}";
+                Title = "Create New Asset";
+                CreateButton.Text = "Create Asset";
+            }
+
+           
+        }
+
+        private async void LoadAssetDetails(int assetId)
+        {
+            using (var client = new HttpClient())
+            {
+                _currentAccessToken = Preferences.Get("accessToken", string.Empty);
+                client.SetBearerToken(_currentAccessToken);
+
+                var response = await client.GetAsync($"https://dev.amnathrig.app/assets/{assetId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var asset = JsonSerializer.Deserialize<Asset>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    _asset = asset;
+
+                    AssetNameEntry.Text = asset.Name;
+                    AssetDescriptionEntry.Text = asset.Description;
+
+                    // Select the predefined type if available
+                    if (PredefinedTypes.Contains(_asset.AssetType))
+                    {
+                        PredefinedTypesPicker.SelectedItem = _asset.AssetType;
+                    }
+                    else
+                    {
+                        CustomAssetTypeEntry.Text = _asset.AssetType;
+                    }
+
+                   
+
+                    // Load properties into the observable collection
+                    Properties.Clear();
+                    foreach (var property in asset.Properties)
+                    {
+                        Properties.Add(property);
+                    }
+                }
+                else
+                {
+                    await DisplayAlert("Error", "Failed to load asset details.", "OK");
+                }
             }
         }
-    }
-}
 
-// Helper class to hold the property data (Name/Value)
-public class PropertyEntry
-{
-    public Entry NameEntry { get; set; }
-    public Entry ValueEntry { get; set; }
+        private async void OnSaveClicked(object sender, EventArgs e)
+        {
+            _currentAccessToken = Preferences.Get("accessToken", string.Empty);
+            var newAsset = new Asset
+            {
+                Name = AssetNameEntry.Text,
+                Description = AssetDescriptionEntry.Text,
+                Properties = Properties.ToList()
+            };
+
+            if (!string.IsNullOrWhiteSpace(CustomAssetTypeEntry.Text))
+            {
+                newAsset.AssetType = CustomAssetTypeEntry.Text;
+            }
+            else
+            {
+                newAsset.AssetType = PredefinedTypesPicker.SelectedItem?.ToString();
+            }
+
+
+            using (var client = new HttpClient())
+            {
+                client.SetBearerToken(_currentAccessToken);
+
+                HttpResponseMessage response;
+                if (_assetId.HasValue)
+                {
+                    // Update existing asset
+                    response = await client.PutAsJsonAsync($"https://dev.amnathrig.app/assets/{_assetId}", newAsset);
+                }
+                else
+                {
+                    // Create new asset
+                    response = await client.PostAsJsonAsync("https://dev.amnathrig.app/assets", newAsset);
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    await DisplayAlert("Success", _assetId.HasValue ? "Asset updated successfully." : "Asset created successfully.", "OK");
+                    await Navigation.PopAsync(); // Go back to the previous page
+                }
+                else
+                {
+                    await DisplayAlert("Error", "Failed to save the asset.", "OK");
+                }
+            }
+        }
+
+        private void OnCustomAssetTypeChanged(object sender, TextChangedEventArgs e)
+        {
+            _customAssetType = e.NewTextValue;
+        }
+
+        private void OnAddPropertyClicked(object sender, EventArgs e)
+        {
+            Properties.Add(new AssetProperty { Name = "", Value = "" });
+        }
+
+        private void OnRemovePropertyClicked(object sender, EventArgs e)
+        {
+            var property = (AssetProperty)((Button)sender).BindingContext;
+            Properties.Remove(property);
+        }
+    }
 }

@@ -1,43 +1,44 @@
-<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MauiApp1.CreateAssetPage"
-             Title="Create Asset">
+             Title="Create New Asset">
     <ScrollView>
-        <VerticalStackLayout Padding="20">
-            <Label Text="Create New Asset" FontSize="24" FontAttributes="Bold" />
-
+        <StackLayout Padding="20">
+            <!-- Asset Name -->
             <Label Text="Asset Name" />
             <Entry x:Name="AssetNameEntry" Placeholder="Enter asset name" />
 
+            <!-- Asset Description -->
             <Label Text="Asset Description" />
-            <Editor x:Name="AssetDescriptionEditor" Placeholder="Enter asset description" HeightRequest="100" />
+            <Editor x:Name="AssetDescriptionEntry" Placeholder="Enter asset description" />
 
             <Label Text="Asset Type" />
-            <Picker x:Name="AssetTypePicker" Title="Select Asset Type">
-                <Picker.ItemsSource>
-                    <x:Array Type="{x:Type x:String}">
-                        <x:String>Vehicle</x:String>
-                        <x:String>Appliance</x:String>
-                        <x:String>Real Estate Property</x:String>
-                        <x:String>Furniture</x:String>
-                        <x:String>Electronics</x:String>
-                    </x:Array>
-                </Picker.ItemsSource>
-            </Picker>
+            <Picker x:Name="PredefinedTypesPicker" Title="Select Asset Type" ItemsSource="{Binding PredefinedTypes}" SelectedItem="{Binding Asset.AssetType}" />
 
             <Label Text="Custom Asset Type" />
-            <Entry x:Name="CustomAssetTypeEntry" Placeholder="Enter custom asset type (optional)" />
+            <Entry  x:Name="CustomAssetTypeEntry" Text="{Binding CustomAssetType}" Placeholder="Enter custom type" />
 
-            <!-- Dynamic properties section -->
-            <Label Text="Asset Properties" />
-            <StackLayout x:Name="PropertiesStackLayout" />
 
+            <!-- Properties List -->
+            <Label Text="Properties" />
+            <CollectionView ItemsSource="{Binding Properties}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <StackLayout>
+                            <Entry Placeholder="Property Name" Text="{Binding Name}" />
+                            <Entry Placeholder="Property Value" Text="{Binding Value}" />
+                            <Button Text="Remove" Clicked="OnRemovePropertyClicked" />
+                        </StackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Add Property Button -->
             <Button Text="Add Property" Clicked="OnAddPropertyClicked" />
 
-            <Button Text="Create Asset" Clicked="OnCreateAssetClicked" />
+            <!-- Save/Create Button -->
+            <Button x:Name="CreateButton" Text="Create Asset" Clicked="OnSaveClicked" />
 
-            <Label x:Name="StatusLabel" TextColor="Red" FontSize="16" />
-        </VerticalStackLayout>
+        </StackLayout>
     </ScrollView>
 </ContentPage>

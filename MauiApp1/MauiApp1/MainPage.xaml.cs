@@ -1,156 +1,128 @@
 ﻿using IdentityModel.Client;
 using IdentityModel.OidcClient;
+using System.Collections.ObjectModel;
 using System.Text.Json;
+using MauiApp1.Models;
 
 namespace MauiApp1;
 
 public partial class MainPage : ContentPage
 {
     private readonly OidcClient _client;
-    private string? _currentAccessToken;
+    private string _currentAccessToken;
+
+    // Observable collection to bind to the CollectionView
+    public ObservableCollection<Asset> Assets { get; set; } = new ObservableCollection<Asset>();
 
     public MainPage(OidcClient client)
     {
         InitializeComponent();
         _client = client;
+
+        // Binding the Assets collection to the view
+        BindingContext = this;
+
+        // Automatically log in and load assets
+       
     }
 
-    // Automatically called when the page appears
-    protected override async void OnAppearing()
+    private async void LoadAssets()
     {
-        base.OnAppearing();
-        await AutoLoginAndFetchAssets();
-    }
-
-    // Automatically login and fetch assets
-    private async Task AutoLoginAndFetchAssets()
-    {
-        MessageLabel.Text = "Attempting to log in...";
-
-        // Log in to get the access token
-        var loginResult = await _client.LoginAsync();
-
-        if (loginResult.IsError)
+        var result = await _client.LoginAsync();
+        if (result.IsError)
         {
-            MessageLabel.Text = $"Login Error: {loginResult.Error}";
+            await DisplayAlert("Login Failed", result.Error, "OK");
             return;
         }
 
-        _currentAccessToken = loginResult.AccessToken;
+        _currentAccessToken = result.AccessToken;
         Preferences.Set("accessToken", _currentAccessToken);
 
-
-        // Fetch the assets after login
+        // Fetch assets
         await FetchAssets();
     }
 
-    // Fetch assets from the API using the access token
-    private async Task FetchAssets()
+     protected override void OnAppearing()
     {
-        MessageLabel.Text = "Fetching assets...";
-
-        if (!string.IsNullOrEmpty(_currentAccessToken))
+        base.OnAppearing();
+        // Re-fetch assets every time the MainPage appears
+        if (string.IsNullOrEmpty(_currentAccessToken))
         {
-            var httpClient = new HttpClient();
-            httpClient.SetBearerToken(_currentAccessToken);
-
-            var response = await httpClient.GetAsync("https://dev.amnathrig.app/assets");
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                var assets = JsonDocument.Parse(content).RootElement.EnumerateArray();
-
-                // Clear previous content
-                AssetsStackLayout.Children.Clear();
-
-                // Loop through each asset and create UI elements dynamically
-                foreach (var asset in assets)
-                {
-                    // Create labels for asset details
-                    var assetNameLabel = new Label
-                    {
-                        Text = $"Asset Name: {asset.GetProperty("name").GetString()}",
-                        FontAttributes = FontAttributes.Bold,
-                        FontSize = 16,
-                        TextColor = Colors.Black
-                    };
-
-                    var assetDescriptionLabel = new Label
-                    {
-                        Text = $"Description: {asset.GetProperty("description").GetString()}",
-                        FontSize = 14,
-                        TextColor = Colors.Gray
-                    };
-
-                    var assetTypeLabel = new Label
-                    {
-                        Text = $"Type: {asset.GetProperty("assetType").GetString()}",
-                        FontSize = 14,
-                        TextColor = Colors.Gray
-                    };
-
-                    // Add asset labels to the layout
-                    AssetsStackLayout.Children.Add(assetNameLabel);
-                    AssetsStackLayout.Children.Add(assetDescriptionLabel);
-                    AssetsStackLayout.Children.Add(assetTypeLabel);
-
-                    // If the asset has properties, create labels for each property
-                    if (asset.TryGetProperty("properties", out var properties) && properties.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var property in properties.EnumerateArray())
-                        {
-                            var propertyLabel = new Label
-                            {
-                                Text = $"{property.GetProperty("name").GetString()}: {property.GetProperty("value").GetString()}",
-                                FontSize = 14,
-                                TextColor = Colors.DarkGray
-                            };
-                            AssetsStackLayout.Children.Add(propertyLabel);
-                        }
-                    }
-
-                    // Add spacing between assets
-                    AssetsStackLayout.Children.Add(new BoxView { HeightRequest = 20, BackgroundColor = Colors.Transparent });
-                }
-
-                MessageLabel.Text = string.Empty; // Clear message after assets are displayed
-            }
-            else
-            {
-                MessageLabel.Text = $"Error fetching assets: {response.ReasonPhrase}";
-            }
+            LoadAssets();
         }
         else
         {
-            MessageLabel.Text = "No access token available to fetch assets.";
-        }
+            FetchAssets();
+        }   
     }
 
-    // Logout functionality
-    private async void OnLogoutClicked(object sender, EventArgs e)
+    private async Task FetchAssets()
     {
-        await LogoutAndLoginAgain();
-    }
-
-    private async Task LogoutAndLoginAgain()
-    {
-        MessageLabel.Text = "Logging out...";
-
-        var result = await _client.LogoutAsync();
-
-        if (result.IsError)
+        using (var client = new HttpClient())
         {
-            MessageLabel.Text = $"Logout Error: {result.Error}";
-            return;
-        }
+            client.SetBearerToken(_currentAccessToken);
+            var response = await client.GetAsync("https://dev.amnathrig.app/assets");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var assets = JsonSerializer.Deserialize<List<Asset>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        MessageLabel.Text = "Logged out. Attempting to login again...";
-        //await AutoLoginAndFetchAssets();
+                Assets.Clear();
+                foreach (var asset in assets)
+                {
+                    Assets.Add(asset);
+                }
+            }
+            else
+            {
+                await DisplayAlert("Error", "Failed to load assets.", "OK");
+            }
+        }
     }
 
-    private async void OnCreateAssetClicked(object sender, EventArgs e)
+    // Command to handle creating a new asset
+    public Command CreateAssetCommand => new Command(async () =>
     {
-        // Navigate to CreateAssetPage
-        await Navigation.PushAsync(new CreateAssetPage());
+        // Navigate to CreateAssetPage without an assetId for creating a new asset
+        await Navigation.PushAsync(new CreateAssetPage(null));
+    });
+
+    // Command to handle editing an asset
+    public Command EditAssetCommand => new Command<int>(async (assetId) =>
+    {
+        // Navigate to CreateAssetPage with the selected assetId for editing
+        await Navigation.PushAsync(new CreateAssetPage(assetId));
+    });
+
+    // Method to handle deletion of the asset
+    private async void OnDeleteClicked(object sender, EventArgs e)
+    {
+        var button = sender as Button;
+        var assetId = (int)button.CommandParameter;
+
+        var confirmed = await DisplayAlert("Confirm Delete", "Are you sure you want to delete this asset?", "Yes", "No");
+        if (confirmed)
+        {
+            using (var client = new HttpClient())
+            {
+                client.SetBearerToken(_currentAccessToken);
+                var response = await client.DeleteAsync($"https://dev.amnathrig.app/assets/{assetId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    // Remove the deleted asset from the collection
+                    var assetToRemove = Assets.FirstOrDefault(a => a.Id == assetId);
+                    if (assetToRemove != null)
+                    {
+                        Assets.Remove(assetToRemove);
+                    }
+
+                    await DisplayAlert("Success", "Asset deleted successfully.", "OK");
+                }
+                else
+                {
+                    await DisplayAlert("Error", "Failed to delete asset.", "OK");
+                }
+            }
+        }
     }
 }
