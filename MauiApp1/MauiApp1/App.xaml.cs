@@ -1,11 +1,13 @@
-﻿namespace MauiApp1;
+﻿using IdentityModel.OidcClient;
+
+namespace MauiApp1;
 
 public partial class App : Application
 {
-    public App()
+    public App(OidcClient oidcClient)
     {
         InitializeComponent();
 
-        MainPage = new AppShell();
+        MainPage = new NavigationPage(new MainPage(oidcClient));
     }
 }

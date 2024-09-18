@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp1.CreateAssetPage"
+             Title="Create Asset">
+    <ScrollView>
+        <VerticalStackLayout Padding="20">
+            <Label Text="Create New Asset" FontSize="24" FontAttributes="Bold" />
+
+            <Label Text="Asset Name" />
+            <Entry x:Name="AssetNameEntry" Placeholder="Enter asset name" />
+
+            <Label Text="Asset Description" />
+            <Editor x:Name="AssetDescriptionEditor" Placeholder="Enter asset description" HeightRequest="100" />
+
+            <Label Text="Asset Type" />
+            <Picker x:Name="AssetTypePicker" Title="Select Asset Type">
+                <Picker.ItemsSource>
+                    <x:Array Type="{x:Type x:String}">
+                        <x:String>Vehicle</x:String>
+                        <x:String>Appliance</x:String>
+                        <x:String>Real Estate Property</x:String>
+                        <x:String>Furniture</x:String>
+                        <x:String>Electronics</x:String>
+                    </x:Array>
+                </Picker.ItemsSource>
+            </Picker>
+
+            <Label Text="Custom Asset Type" />
+            <Entry x:Name="CustomAssetTypeEntry" Placeholder="Enter custom asset type (optional)" />
+
+            <!-- Dynamic properties section -->
+            <Label Text="Asset Properties" />
+            <StackLayout x:Name="PropertiesStackLayout" />
+
+            <Button Text="Add Property" Clicked="OnAddPropertyClicked" />
+
+            <Button Text="Create Asset" Clicked="OnCreateAssetClicked" />
+
+            <Label x:Name="StatusLabel" TextColor="Red" FontSize="16" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

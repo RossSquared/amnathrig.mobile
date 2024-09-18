@@ -7,6 +7,7 @@ public static class MauiProgram
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
+      
         builder
             .UseMauiApp<App>()
             .ConfigureFonts(fonts =>
@@ -27,12 +28,16 @@ public static class MauiProgram
             ClientId = "maui_client",
             Scope = "openid profile amnathrigAPI",
             RedirectUri = "amnathrig://callback",
+            PostLogoutRedirectUri = "amnathrig://callback", 
+            
 
             Browser = new MauiAuthenticationBrowser()
         }));
 
         // add main page
         builder.Services.AddSingleton<MainPage>();
+
+        builder.Services.AddTransient<CreateAssetPage>();
 
         return builder.Build();
     }

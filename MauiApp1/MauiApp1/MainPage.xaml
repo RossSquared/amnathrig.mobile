@@ -3,29 +3,31 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MauiApp1.MainPage">
 
-    <ScrollView>
-        <VerticalStackLayout
-            Padding="30,0"
-            Spacing="25">
+    <ContentPage.Content>
+        <!-- Layout for the page -->
+        <VerticalStackLayout Padding="10">
 
-            <Label
-                Text="Amnathrig"
-                Style="{StaticResource Headline}"
-                SemanticProperties.HeadingLevel="Level1" />
+            <!-- Add the Logout Button at the top -->
+            <Button Text="Logout" 
+                    HorizontalOptions="End"
+                    Clicked="OnLogoutClicked"
+                    BackgroundColor="Red" 
+                    TextColor="White"/>
+            
+            <Button Text="Create New Asset" Clicked="OnCreateAssetClicked"/>
 
-            <Button
-                x:Name="LoginButton"
-                Text="Login" 
-                Clicked="OnLoginClicked"
-                HorizontalOptions="Fill"
-                BackgroundColor="#005500"
-                />
-           
 
-            <Editor x:Name="editor"
-                    HeightRequest="350" />
-
+            <!-- ScrollView for asset details -->
+            <ScrollView>
+                <StackLayout x:Name="AssetsStackLayout" Padding="10">
+                    <Label Text="Assets will be displayed here." 
+                           x:Name="MessageLabel"
+                           VerticalOptions="Center" 
+                           HorizontalOptions="Center" 
+                           FontSize="Medium" 
+                           TextColor="Black"/>
+                </StackLayout>
+            </ScrollView>
         </VerticalStackLayout>
-    </ScrollView>
-
+    </ContentPage.Content>
 </ContentPage>

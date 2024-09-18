@@ -1,79 +1,156 @@
 ﻿using IdentityModel.Client;
 using IdentityModel.OidcClient;
-using System.Text;
 using System.Text.Json;
 
 namespace MauiApp1;
 
 public partial class MainPage : ContentPage
 {
-    private readonly OidcClient _client = default!;
+    private readonly OidcClient _client;
     private string? _currentAccessToken;
-    
+
     public MainPage(OidcClient client)
     {
         InitializeComponent();
-        
         _client = client;
     }
 
-    private async void OnLoginClicked(object sender, EventArgs e)
+    // Automatically called when the page appears
+    protected override async void OnAppearing()
     {
-        editor.Text = "Login Clicked";
+        base.OnAppearing();
+        await AutoLoginAndFetchAssets();
+    }
 
-        var result = await _client.LoginAsync();
+    // Automatically login and fetch assets
+    private async Task AutoLoginAndFetchAssets()
+    {
+        MessageLabel.Text = "Attempting to log in...";
 
-        if (result.IsError)
+        // Log in to get the access token
+        var loginResult = await _client.LoginAsync();
+
+        if (loginResult.IsError)
         {
-            editor.Text = result.Error;
+            MessageLabel.Text = $"Login Error: {loginResult.Error}";
             return;
         }
 
-        _currentAccessToken = result.AccessToken;
+        _currentAccessToken = loginResult.AccessToken;
+        Preferences.Set("accessToken", _currentAccessToken);
 
-        var sb = new StringBuilder(128);
 
-        sb.AppendLine("claims:");
-        foreach (var claim in result.User.Claims)
-        {
-            sb.AppendLine($"{claim.Type}: {claim.Value}");
-        }
-
-        sb.AppendLine();
-        sb.AppendLine("access token:");
-        sb.AppendLine(result.AccessToken);
-
-        if (!string.IsNullOrWhiteSpace(result.RefreshToken))
-        {
-            sb.AppendLine();
-            sb.AppendLine("access token:");
-            sb.AppendLine(result.AccessToken);
-        }
-
-        editor.Text = sb.ToString();
+        // Fetch the assets after login
+        await FetchAssets();
     }
 
-    private async void OnApiClicked(object sender, EventArgs e)
+    // Fetch assets from the API using the access token
+    private async Task FetchAssets()
     {
-        editor.Text = "API Clicked";
+        MessageLabel.Text = "Fetching assets...";
 
-        if (_currentAccessToken != null)
+        if (!string.IsNullOrEmpty(_currentAccessToken))
         {
-            var client = new HttpClient();
-            client.SetBearerToken(_currentAccessToken);
+            var httpClient = new HttpClient();
+            httpClient.SetBearerToken(_currentAccessToken);
 
-            var response = await client.GetAsync("https://dev.amnathrig.app/assets");
+            var response = await httpClient.GetAsync("https://dev.amnathrig.app/assets");
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var doc = JsonDocument.Parse(content).RootElement;
-                editor.Text = JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+                var assets = JsonDocument.Parse(content).RootElement.EnumerateArray();
+
+                // Clear previous content
+                AssetsStackLayout.Children.Clear();
+
+                // Loop through each asset and create UI elements dynamically
+                foreach (var asset in assets)
+                {
+                    // Create labels for asset details
+                    var assetNameLabel = new Label
+                    {
+                        Text = $"Asset Name: {asset.GetProperty("name").GetString()}",
+                        FontAttributes = FontAttributes.Bold,
+                        FontSize = 16,
+                        TextColor = Colors.Black
+                    };
+
+                    var assetDescriptionLabel = new Label
+                    {
+                        Text = $"Description: {asset.GetProperty("description").GetString()}",
+                        FontSize = 14,
+                        TextColor = Colors.Gray
+                    };
+
+                    var assetTypeLabel = new Label
+                    {
+                        Text = $"Type: {asset.GetProperty("assetType").GetString()}",
+                        FontSize = 14,
+                        TextColor = Colors.Gray
+                    };
+
+                    // Add asset labels to the layout
+                    AssetsStackLayout.Children.Add(assetNameLabel);
+                    AssetsStackLayout.Children.Add(assetDescriptionLabel);
+                    AssetsStackLayout.Children.Add(assetTypeLabel);
+
+                    // If the asset has properties, create labels for each property
+                    if (asset.TryGetProperty("properties", out var properties) && properties.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var property in properties.EnumerateArray())
+                        {
+                            var propertyLabel = new Label
+                            {
+                                Text = $"{property.GetProperty("name").GetString()}: {property.GetProperty("value").GetString()}",
+                                FontSize = 14,
+                                TextColor = Colors.DarkGray
+                            };
+                            AssetsStackLayout.Children.Add(propertyLabel);
+                        }
+                    }
+
+                    // Add spacing between assets
+                    AssetsStackLayout.Children.Add(new BoxView { HeightRequest = 20, BackgroundColor = Colors.Transparent });
+                }
+
+                MessageLabel.Text = string.Empty; // Clear message after assets are displayed
             }
             else
             {
-                editor.Text = response.ReasonPhrase;
+                MessageLabel.Text = $"Error fetching assets: {response.ReasonPhrase}";
             }
         }
+        else
+        {
+            MessageLabel.Text = "No access token available to fetch assets.";
+        }
+    }
+
+    // Logout functionality
+    private async void OnLogoutClicked(object sender, EventArgs e)
+    {
+        await LogoutAndLoginAgain();
+    }
+
+    private async Task LogoutAndLoginAgain()
+    {
+        MessageLabel.Text = "Logging out...";
+
+        var result = await _client.LogoutAsync();
+
+        if (result.IsError)
+        {
+            MessageLabel.Text = $"Logout Error: {result.Error}";
+            return;
+        }
+
+        MessageLabel.Text = "Logged out. Attempting to login again...";
+        //await AutoLoginAndFetchAssets();
+    }
+
+    private async void OnCreateAssetClicked(object sender, EventArgs e)
+    {
+        // Navigate to CreateAssetPage
+        await Navigation.PushAsync(new CreateAssetPage());
     }
 }
-
