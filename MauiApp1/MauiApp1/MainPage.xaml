@@ -7,6 +7,8 @@
     <ScrollView>
         <StackLayout Padding="10">
 
+            <Button Text="Logout" BackgroundColor="#005500" TextColor="White" Clicked="OnLogoutClicked"  HorizontalOptions="EndAndExpand" />
+
             <!-- Create Asset Button at the Top -->
             <Button Text="Create New Asset"
                     Command="{Binding CreateAssetCommand}"

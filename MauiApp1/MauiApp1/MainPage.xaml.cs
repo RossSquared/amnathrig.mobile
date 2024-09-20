@@ -42,6 +42,12 @@ public partial class MainPage : ContentPage
         await FetchAssets();
     }
 
+    private async void OnLogoutClicked(object sender, EventArgs e)
+    {
+        var result = await _client.LogoutAsync();
+        LoadAssets();
+    }
+
      protected override void OnAppearing()
     {
         base.OnAppearing();
