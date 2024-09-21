@@ -1,5 +1,6 @@
 ﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:scanner="clr-namespace:BarcodeScanning;assembly=BarcodeScanning.Native.Maui"
              x:Class="MauiApp1.MainPage"
              Title="Assets">
 
@@ -16,8 +17,19 @@
                     Margin="0,10,0,20"
                     BackgroundColor="#4CAF50"
                     TextColor="White" />
+    
+            
+            <Button Text="Scan QR Code for Transfer" 
+                Command="{Binding StartScanCommand}" />
 
-            <Label Text="Your Assets" FontSize="Large" HorizontalOptions="Center" />
+            <!-- QR Code Scanner (Initially hidden) -->
+            <scanner:CameraView x:Name="qrCodeScanner" 
+                                       OnDetectionFinished="OnBarcodeDetected"
+                                      
+                                IsEnabled="True"/>
+
+           
+           <Label Text="Your Assets" FontSize="Large" HorizontalOptions="Center" />
 
             <!-- List of Assets -->
             <CollectionView ItemsSource="{Binding Assets}">
