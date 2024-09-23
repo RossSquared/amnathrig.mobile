@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp1.TransferDetailsPage"
+             Title="Transfer Asset">
+
+    <!-- Wrap everything in a ScrollView -->
+    <ScrollView>
+        <StackLayout Padding="10">
+            <Label Text="Asset Details" FontSize="Large" />
+
+            <Label Text="Name:" FontAttributes="Bold" />
+            <Label Text="{Binding Asset.Name}" />
+
+            <Label Text="Description:" FontAttributes="Bold" />
+            <Label Text="{Binding Asset.Description}" />
+
+            <Label Text="Asset Type:" FontAttributes="Bold" />
+            <Label Text="{Binding Asset.AssetType}" />
+
+            <!-- List of Properties -->
+            <Label Text="Properties:" FontAttributes="Bold" />
+            <CollectionView ItemsSource="{Binding Asset.Properties}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <StackLayout Orientation="Horizontal">
+                            <Label Text="{Binding Name}" FontAttributes="Bold" />
+                            <Label Text=": " />
+                            <Label Text="{Binding Value}" />
+                        </StackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Text="Owner:" FontAttributes="Bold" />
+            <Label Text="{Binding OwnerUsername}" />
+
+            <Button Text="Request Transfer" Command="{Binding RequestTransferCommand}" />
+        </StackLayout>
+    </ScrollView>
+
+</ContentPage>

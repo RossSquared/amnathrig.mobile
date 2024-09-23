@@ -3,7 +3,10 @@ using IdentityModel.OidcClient;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using MauiApp1.Models;
-using BarcodeScanning;
+using ZXing.Net.Maui;
+using System.Net.Http.Json;
+using ZXing;
+
 
 namespace MauiApp1;
 
@@ -26,74 +29,16 @@ public partial class MainPage : ContentPage
         // Binding the Assets collection to the view
         BindingContext = this;
 
-        // Automatically log in and load assets
-       
     }
 
     private async void StartScanning()
     {
-        await Methods.AskForRequiredPermissionAsync();
+        //await Methods.AskForRequiredPermissionAsync();
         // Show the QR code scanner
-        qrCodeScanner.IsVisible = true;
-        qrCodeScanner.IsEnabled = true;
+        await Navigation.PushAsync(new ScanPage());
     }
 
-    private async void OnBarcodeDetected(object sender, OnDetectionFinishedEventArg  e)
-    {
-        try
-        {
-            var qrcodeVal = "";
-            if (e.BarcodeResults.Length == 0)
-            {
-                await DisplayAlert("Error", "No QR code detected.", "OK");
-                return;
-            }
-            else
-            {
-                qrcodeVal = e.BarcodeResults[0].DisplayValue;
-            }
-
-            qrCodeScanner.IsVisible = false;
-
-            // Send the QR code to the backend for processing
-            await VerifyAndProcessTransfer(qrcodeVal);
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("Error", ex.Message, "OK");
-        }
-        
-    }
-
-    private async Task VerifyAndProcessTransfer(string qrCodeData)
-    {
-        using(var client = new HttpClient())
-        {
-            client.SetBearerToken(_currentAccessToken);
-            var response = await client.PostAsync("https://dev.amnathrig.app/assets/verify-transfer", new StringContent(qrCodeData));
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<TransferResponse>(content);
-
-                if (result.Message != null)
-                {
-                    await DisplayAlert("Info", result.Message, "OK");
-                }
-                else
-                {
-                    await Navigation.PushAsync(new TransferDetailsPage(result.Asset, result.OwnerUsername));
-                }
-            }
-            else
-            {
-                await DisplayAlert("Error", "Failed to verify transfer.", "OK");
-            }
-        }       
-    }
-
-
-
+   
     private async void LoadAssets()
     {
         var result = await _client.LoginAsync();
