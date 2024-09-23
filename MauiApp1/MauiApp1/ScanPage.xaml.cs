@@ -101,6 +101,7 @@ public partial class ScanPage : ContentPage
                 if (result.Message != null)
                 {
                     await DisplayAlert("Info", result.Message, "OK");
+                    await Navigation.PopAsync();
                 }
                 else
                 {
