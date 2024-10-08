@@ -39,8 +39,8 @@
 
 		<Extensions>
 			<uap:Extension Category="windows.protocol">
-				<uap:Protocol Name="myapp">
-					<uap:DisplayName>Oidc Sample App</uap:DisplayName>
+				<uap:Protocol Name="amnathrig">
+					<uap:DisplayName>Amnathrig</uap:DisplayName>
 				</uap:Protocol>
 			</uap:Extension>
 		</Extensions>

@@ -25,7 +25,7 @@ public partial class ScanPage : ContentPage
         };
     }
 
-    private void OnBarcodeDetected(object sender, BarcodeDetectionEventArgs e)
+    private async void  OnBarcodeDetected(object sender, BarcodeDetectionEventArgs e)
     {
         try
         {
@@ -53,18 +53,14 @@ public partial class ScanPage : ContentPage
             }
 
             
-            // Send the QR code to the backend for processing
+            // Send the QR code value to the backend for processing
 
-            Dispatcher.DispatchAsync(async () =>
-            {
-                await VerifyAndProcessTransfer(qrcodeVal);
-            });
+           
+            await VerifyAndProcessTransfer(qrcodeVal);
+          
 
-            Dispatcher.DispatchAsync(async () =>
-            {
-                DisplayAlert("Info", "Scanning Complete. Press OK to Continue", "OK");
-            });
-
+            
+            
             isProcessingScan = false;
             qrCodeScanner.BarcodesDetected += OnBarcodeDetected;
         }
@@ -105,13 +101,18 @@ public partial class ScanPage : ContentPage
                 }
                 else
                 {
-                    await Navigation.PushAsync(new TransferDetailsPage(result.Asset, result.OwnerUsername));
+                    Task.Delay(1);
+                    Device.BeginInvokeOnMainThread(async () => {
 
-                    var navigationStack = Navigation.NavigationStack.ToList();
-                    if (navigationStack.Count > 1)
-                    {
-                        Navigation.RemovePage(navigationStack[navigationStack.Count - 2]);
-                    }
+                        await Navigation.PushAsync(new TransferDetailsPage(result.Asset, result.OwnerUsername));
+                        var navigationStack = Navigation.NavigationStack.ToList();
+                        if (navigationStack.Count > 1)
+                        {
+                            Navigation.RemovePage(navigationStack[navigationStack.Count - 2]);
+                        }
+                    }); 
+
+                   
                 }
             }
             else
